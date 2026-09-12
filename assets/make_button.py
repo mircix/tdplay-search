@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Render a TDPlay-style glossy black oval button with pink glowing text to a
-transparent PNG.  python3 make_button.py "Search" search-button.png [--font PATH]
+transparent PNG.  python3 make_button.py "Search" search-button.png [--font PATH] [--magnifier]
 """
 import sys
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
@@ -29,7 +29,21 @@ def vgradient(size, top, bottom):
     return g
 
 
-def render(text, out, font_path):
+def draw_magnifier(d, x, y, size, fill):
+    """Magnifying glass: ring + 45° handle, drawn inside the (x, y, size, size) box."""
+    stroke = max(2, int(size * 0.17))
+    ring = int(size * 0.70)
+    d.ellipse((x, y, x + ring, y + ring), outline=fill, width=stroke)
+    # handle from the ring's lower-right edge to the box corner
+    hx0 = x + ring - int(ring * 0.12)
+    hy0 = y + ring - int(ring * 0.12)
+    hx1, hy1 = x + size, y + size
+    d.line((hx0, hy0, hx1, hy1), fill=fill, width=int(stroke * 1.35))
+    r = int(stroke * 1.35 / 2)
+    d.ellipse((hx1 - r, hy1 - r, hx1 + r, hy1 + r), fill=fill)   # round cap
+
+
+def render(text, out, font_path, magnifier=False):
     img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     x0, y0 = (W - BW) // 2, (H - BH) // 2
     box = (x0, y0, x0 + BW, y0 + BH)
@@ -64,15 +78,27 @@ def render(text, out, font_path):
     except Exception:
         pass
     bb = ImageDraw.Draw(img).textbbox((0, 0), text, font=font)
-    tx = (W - (bb[2] - bb[0])) // 2 - bb[0]
-    ty = (H - (bb[3] - bb[1])) // 2 - bb[1] - 2 * SS
+    text_w, text_h = bb[2] - bb[0], bb[3] - bb[1]
+    icon = int(text_h * 0.92) if magnifier else 0
+    gap = int(text_h * 0.30) if magnifier else 0
+    group_w = icon + gap + text_w
+    gx = (W - group_w) // 2
+    tx = gx + icon + gap - bb[0]
+    ty = (H - text_h) // 2 - bb[1] - 2 * SS
+    iy = (H - icon) // 2 - 2 * SS
+
+    def paint(d, color, dy=0):
+        if magnifier:
+            draw_magnifier(d, gx, iy + dy, icon, color)
+        d.text((tx, ty + dy), text, font=font, fill=color)
+
     glow = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    ImageDraw.Draw(glow).text((tx, ty), text, font=font, fill=PINK_GLOW + (255,))
+    paint(ImageDraw.Draw(glow), PINK_GLOW + (255,))
     for r in (26, 14, 7, 3):
         img.alpha_composite(glow.filter(ImageFilter.GaussianBlur(r * SS)))
     d = ImageDraw.Draw(img)
-    d.text((tx, ty + 3 * SS), text, font=font, fill=PINK_DARK + (255,))   # depth
-    d.text((tx, ty), text, font=font, fill=PINK + (255,))
+    paint(d, PINK_DARK + (255,), dy=3 * SS)   # depth
+    paint(d, PINK + (255,))
 
     img = img.resize((W // SS, H // SS), Image.LANCZOS)
     img.save(out, optimize=True)
@@ -83,4 +109,4 @@ if __name__ == "__main__":
     text = sys.argv[1] if len(sys.argv) > 1 else "Search"
     out = sys.argv[2] if len(sys.argv) > 2 else "search-button.png"
     font = sys.argv[sys.argv.index("--font") + 1] if "--font" in sys.argv else "Oswald.ttf"
-    print(render(text, out, font))
+    print(render(text, out, font, magnifier="--magnifier" in sys.argv))
