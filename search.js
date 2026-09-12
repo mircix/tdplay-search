@@ -26,9 +26,8 @@
 font:15px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var(--tds-text);\
 max-width:900px;margin:0 auto;box-sizing:border-box}\
 .tds *{box-sizing:border-box}\
-.tds-box{position:relative;display:flex;align-items:center;gap:10px;background:var(--tds-panel);border:1px solid var(--tds-line);\
-border-radius:14px;padding:6px 10px 6px 16px;box-shadow:0 0 0 0 rgba(255,43,43,0);transition:box-shadow .2s,border-color .2s}\
-.tds-box:focus-within{border-color:var(--tds-red);box-shadow:0 0 0 4px rgba(255,43,43,.18)}\
+.tds-box{position:relative;display:flex;align-items:center;gap:10px;border-radius:16px;padding:6px 10px 6px 16px;transition:box-shadow .2s,border-color .2s}\
+.tds-box:focus-within{border-color:rgba(255,43,43,.8);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 10px 28px rgba(0,0,0,.38),0 0 0 4px rgba(255,43,43,.18)}\
 .tds-box svg{flex:none;width:22px;height:22px;fill:none;stroke:var(--tds-muted);stroke-width:2.2;stroke-linecap:round}\
 .tds-input{flex:1;min-width:0;background:transparent;border:0;outline:0;color:var(--tds-text);font:inherit;font-size:19px;padding:10px 0}\
 .tds-input::placeholder{color:var(--tds-muted)}\
@@ -41,14 +40,17 @@ border-radius:14px;padding:6px 10px 6px 16px;box-shadow:0 0 0 0 rgba(255,43,43,0
 .tds-hint button:hover{border-color:var(--tds-cyan)}\
 .tds-results{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}\
 .tds-group{margin:16px 0 4px;font-family:Oswald,'Arial Narrow',Impact,sans-serif;font-size:14px;letter-spacing:.12em;text-transform:uppercase;color:var(--tds-muted)}\
-.tds-page{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--tds-panel);border:1px solid var(--tds-line);border-radius:12px;text-decoration:none;color:inherit}\
-.tds-page:hover,.tds-page.tds-active{border-color:var(--tds-red)}\
+.tds-glass{background:linear-gradient(135deg,rgba(255,255,255,.12),rgba(255,255,255,.035) 40%,rgba(255,255,255,0) 70%),rgba(22,22,32,.42);\
+border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 -1px 0 rgba(0,0,0,.25),0 10px 28px rgba(0,0,0,.38);\
+-webkit-backdrop-filter:blur(16px) saturate(150%);backdrop-filter:blur(16px) saturate(150%)}\
+.tds-page{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:14px;text-decoration:none;color:inherit;transition:border-color .15s,box-shadow .15s,transform .15s}\
+.tds-page:hover,.tds-page.tds-active{border-color:rgba(255,43,43,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 10px 28px rgba(0,0,0,.38),0 0 22px rgba(255,43,43,.22)}\
 .tds-page .tds-pn{font-family:Oswald,'Arial Narrow',Impact,sans-serif;font-size:20px;letter-spacing:.02em}\
 .tds-page .tds-pn em{font-style:normal;color:var(--tds-red)}\
 .tds-page .tds-pc{margin-left:auto;color:var(--tds-muted);font-size:13px;white-space:nowrap}\
-.tds-item{display:grid;grid-template-columns:120px 1fr;gap:0 14px;background:var(--tds-panel);border:1px solid var(--tds-line);border-radius:12px;\
-overflow:hidden;text-decoration:none;color:inherit;transition:border-color .15s,transform .15s}\
-.tds-item:hover,.tds-item.tds-active{border-color:var(--tds-red);transform:translateY(-1px)}\
+.tds-item{display:grid;grid-template-columns:120px 1fr;gap:0 14px;border-radius:14px;\
+overflow:hidden;text-decoration:none;color:inherit;transition:border-color .15s,transform .15s,box-shadow .15s}\
+.tds-item:hover,.tds-item.tds-active{border-color:rgba(255,43,43,.75);transform:translateY(-1px);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 12px 30px rgba(0,0,0,.42),0 0 22px rgba(255,43,43,.22)}\
 .tds-thumb{width:120px;aspect-ratio:16/9;background:#1a1a22 center/cover no-repeat;display:block;align-self:stretch;min-height:68px}\
 .tds-body{padding:10px 12px 10px 0;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:4px}\
 .tds-cap{font-size:15px;line-height:1.3;color:var(--tds-cyan);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}\
@@ -270,7 +272,7 @@ filter:drop-shadow(0 -1px 0 rgba(255,255,255,.55)) drop-shadow(0 1px 0 rgba(0,0,
                             "aria-label": "Search TDPlay", autocomplete: "off", spellcheck: "false" });
   var clear = h("button", { "class": "tds-clear", type: "button", "aria-label": "Clear", html: "&times;" });
   clear.style.visibility = "hidden";
-  var box = h("div", { "class": "tds-box" }, [h("span", { html: ICON_SEARCH }), input, clear]);
+  var box = h("div", { "class": "tds-box tds-glass" }, [h("span", { html: ICON_SEARCH }), input, clear]);
   var status = h("div", { "class": "tds-status" });
   var hint = h("div", { "class": "tds-hint" });
   var list = h("ol", { "class": "tds-results", role: "listbox" });
@@ -322,7 +324,7 @@ filter:drop-shadow(0 -1px 0 rgba(255,255,255,.55)) drop-shadow(0 1px 0 rgba(0,0,
       var shownPages = state.allPages ? r.pages : r.pages.slice(0, PAGES_COLLAPSED);
       shownPages.forEach(function (p) {
         var name = p.name.replace(/^TDPlay\s*-?\s*/, "");
-        var a = h("a", { "class": "tds-page", href: pageUrl(p), target: openTarget, role: "option" }, [
+        var a = h("a", { "class": "tds-page tds-glass", href: pageUrl(p), target: openTarget, role: "option" }, [
           h("span", { "class": "tds-pn", html: "TDPlay <em>" + highlight(name, toks) + "</em>" }),
           h("span", { "class": "tds-pc", text: p.items.length ? p.items.length + " videos" : "" })
         ]);
@@ -354,7 +356,7 @@ filter:drop-shadow(0 -1px 0 rgba(255,255,255,.55)) drop-shadow(0 1px 0 rgba(0,0,
       if (l.spotify) ext("spotify", l.spotify, "Spotify");
       if (l.youtube) ext("youtube", l.youtube, "Artist on YouTube");
       if (l.site) ext("site", l.site, "Artist website");
-      var a = h("a", { "class": "tds-item", href: pageUrl(p, it), target: openTarget, role: "option", title: "Open " + p.name }, [
+      var a = h("a", { "class": "tds-item tds-glass", href: pageUrl(p, it), target: openTarget, role: "option", title: "Open " + p.name }, [
         h("span", { "class": "tds-thumb", style: "background-image:url(" + (it.yt ? THUMB(it.yt) : ART(it.thumb)) + ")" }),
         h("span", { "class": "tds-body" }, [
           h("span", { "class": "tds-cap", html: highlight(it.caption || "(untitled)", toks) }),
