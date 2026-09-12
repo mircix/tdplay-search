@@ -32,7 +32,7 @@ SITEMAP = SITE + "/sitemap.xml"
 # Pages to leave out of the search (regular expressions matched against the slug,
 # e.g. "tdplay-january24-pg3"). Remove an entry to bring the pages back.
 EXCLUDE = [
-    r"^tdplay-january24-pg\d+$",   # January'24 – not finished yet
+    # r"^tdplay-january24-pg\d+$",   # example: hide a whole month while it's unfinished
 ]
 HERE = os.path.dirname(os.path.abspath(__file__))
 HEADERS = {

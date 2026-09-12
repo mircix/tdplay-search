@@ -81,7 +81,7 @@ a red frame around it – paste [`jump.html`](jump.html) once, site-wide:
 - **Only published pages count** – edits sitting unpublished in the builder aren't visible
   to the crawler.
 - **Hide unfinished pages:** add a pattern to the `EXCLUDE` list at the top of
-  `build_index.py` (January'24 is excluded this way); delete the line to bring them back.
+  `build_index.py`; delete the line to bring them back.
 - `status.json` records when the site was last checked; it changes once a day so the
   repository stays "active" (GitHub switches off schedules on repos with no commits
   for 60 days).
