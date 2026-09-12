@@ -352,13 +352,14 @@ def write_json(path, obj):
 
 
 def main():
-    previous = {}
+    previous, prev_doc = {}, {}
     if os.path.exists(DATA):
         try:
             with open(DATA, encoding="utf-8") as f:
-                previous = {p["slug"]: p for p in json.load(f).get("pages", [])}
+                prev_doc = json.load(f)
+            previous = {p["slug"]: p for p in prev_doc.get("pages", [])}
         except (ValueError, KeyError):
-            previous = {}
+            previous, prev_doc = {}, {}
 
     urls = sitemap_urls()
     print(f"sitemap: {len(urls)} urls")
@@ -388,7 +389,11 @@ def main():
         e["page"] = int(m.group(1)) if (m := re.search(r"-pg(\d+)$", e["slug"])) else 0
     results.sort(key=sort_key)
 
-    generated = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    now = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    # Keep the old "generated" stamp when nothing on the site changed, so an
+    # unchanged crawl produces byte-identical files and no commit.
+    unchanged = prev_doc.get("pages") == results and prev_doc.get("generated")
+    generated = prev_doc["generated"] if unchanged else now
     total_items = sum(len(p["items"]) for p in results)
     meta = {"generated": generated, "site": SITE, "pageCount": len(results), "itemCount": total_items}
 
@@ -414,7 +419,7 @@ def main():
     kb_links = write_json(LINKS, {"generated": generated, "links": links})
     # Date-only so this changes at most once a day: a daily commit stops GitHub from
     # switching the scheduled workflow off after 60 days without repository activity.
-    write_json(STATUS, {"lastChecked": generated[:10], "generated": generated,
+    write_json(STATUS, {"lastChecked": now[:10], "generated": generated,
                         "pageCount": len(results), "itemCount": total_items,
                         "fetched": counts["fetched"], "unchanged": counts["unchanged"],
                         "errors": counts["error"]})
