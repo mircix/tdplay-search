@@ -25,6 +25,8 @@
 --tds-red:#ff2b2b;--tds-cyan:#b1ffff;--tds-pink:#ff5cf0;--tds-mark:rgba(255,43,43,.28);\
 font:15px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var(--tds-text);\
 max-width:900px;margin:0 auto;box-sizing:border-box}\
+.tds.tds-embedded{max-width:960px;padding:32px 30px 16px}\
+@media (max-width:520px){.tds.tds-embedded{padding:26px 18px 12px}}\
 .tds *{box-sizing:border-box}\
 .tds-box{position:relative;display:flex;align-items:center;gap:10px;border-radius:16px;padding:6px 10px 6px 16px;transition:box-shadow .2s,border-color .2s}\
 .tds-box:focus-within{border-color:rgba(255,90,90,.85);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 0 14px rgba(255,43,43,.18),\
@@ -253,6 +255,8 @@ filter:drop-shadow(0 -1px 0 rgba(255,255,255,.55)) drop-shadow(0 1px 0 rgba(0,0,
   var root = document.getElementById("tdplay-search");
   if (!root) { root = h("div", { id: "tdplay-search" }); (script && script.parentNode || document.body).insertBefore(root, script || null); }
   root.classList.add("tds");
+  // Inside an embed iframe (Hostinger) the frame clips at the widget's edges, so leave room for the glows.
+  if (window.top !== window.self) root.classList.add("tds-embedded");
   var styleTag = h("style", { text: CSS }); document.head.appendChild(styleTag);
   var defs = document.createElement("div");
   defs.style.cssText = "position:absolute;width:0;height:0;overflow:hidden";
