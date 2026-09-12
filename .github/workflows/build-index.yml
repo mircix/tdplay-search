@@ -1,0 +1,41 @@
+name: Rebuild search index
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"   # every 6 hours (UTC). Sitemap changes on every publish.
+  workflow_dispatch:         # "Run workflow" button on GitHub for an instant refresh
+  push:
+    branches: [main]
+    paths: [build_index.py]  # rebuild when the indexer itself changes
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-index
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Crawl tdplay.site and rebuild the index
+        run: python3 build_index.py
+
+      - name: Commit updated index (only if something changed)
+        run: |
+          git config user.name  "tdplay-search bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data.json index.json links.json status.json
+          if git diff --cached --quiet; then
+            echo "No changes – index already up to date."
+          else
+            git commit -m "Rebuild search index ($(date -u +'%Y-%m-%d %H:%M UTC'))"
+            git push
+          fi
