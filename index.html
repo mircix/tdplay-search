@@ -33,24 +33,50 @@
       radial-gradient(1px 1px at 6% 50%, #fff 50%, transparent 51%);
     background-size: 700px 500px;
   }
-  main { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 40px 18px 80px; }
+  main { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 28px 18px 80px; }
   header { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 22px; }
   header h1 {
     margin: 0; font-family: Oswald, "Arial Narrow", Impact, sans-serif; font-weight: 600;
     font-size: 44px; letter-spacing: .01em; line-height: 1;
   }
   header h1 em { font-style: normal; color: #ff2b2b; }
-  header a.home { color: #9a9aa8; text-decoration: none; font-size: 14px; margin-left: auto; }
-  header a.home:hover { color: #fff; }
+  /* glossy black oval button with pink glow – matches the site's title-bar buttons */
+  .pill {
+    position: relative; display: flex; align-items: center; justify-content: center;
+    width: 300px; height: 104px; margin: 0 auto 30px; border-radius: 50%;
+    text-decoration: none; overflow: hidden; isolation: isolate;
+    background:
+      radial-gradient(ellipse 70% 55% at 50% 118%, #3a3a3a 0%, rgba(58,58,58,0) 70%),
+      radial-gradient(ellipse 100% 100% at 50% 50%, #161616 0%, #0a0a0a 60%, #000 100%);
+    border: 1px solid #2c2c2c;
+    box-shadow: 0 10px 28px rgba(0,0,0,.85), 0 0 0 1px #000,
+                inset 0 -8px 18px rgba(0,0,0,.9), inset 0 2px 4px rgba(255,255,255,.14);
+    transition: transform .12s ease, box-shadow .2s ease;
+  }
+  .pill::before {                                  /* top glass reflection */
+    content: ""; position: absolute; left: 9%; right: 9%; top: 5%; height: 46%;
+    border-radius: 50%; z-index: -1;
+    background: linear-gradient(to bottom, rgba(255,255,255,.24), rgba(255,255,255,.06) 65%, rgba(255,255,255,0));
+  }
+  .pill span {
+    font-family: Oswald, "Arial Narrow", Impact, sans-serif; font-weight: 600; font-size: 42px;
+    letter-spacing: .01em; line-height: 1; color: #ff74c4; white-space: nowrap;
+    text-shadow: 0 0 6px #ff3fa8, 0 0 16px #ff1f95, 0 0 34px rgba(255,31,149,.65), 0 2px 0 #6e0a3f;
+  }
+  .pill:hover { box-shadow: 0 10px 28px rgba(0,0,0,.85), 0 0 0 1px #000, 0 0 26px rgba(255,31,149,.35),
+                            inset 0 -8px 18px rgba(0,0,0,.9), inset 0 2px 4px rgba(255,255,255,.18); }
+  .pill:hover span { color: #ff8fd0; text-shadow: 0 0 8px #ff4fb0, 0 0 22px #ff1f95, 0 0 44px rgba(255,31,149,.8), 0 2px 0 #6e0a3f; }
+  .pill:active { transform: translateY(2px); }
+  @media (max-width: 520px) { .pill { width: 240px; height: 84px; } .pill span { font-size: 34px; } }
   footer { position: relative; z-index: 1; text-align: center; color: #6c6c78; font-size: 12.5px; padding: 0 18px 30px; }
   footer a { color: #9a9aa8; }
 </style>
 </head>
 <body>
 <main>
+  <a class="pill" href="https://tdplay.site/" aria-label="Back to tdplay.site"><span>Back to Site</span></a>
   <header>
     <h1>TDPlay <em>Search</em></h1>
-    <a class="home" href="https://tdplay.site/">← back to tdplay.site</a>
   </header>
   <div id="tdplay-search"></div>
 </main>
