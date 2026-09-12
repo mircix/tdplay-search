@@ -36,6 +36,7 @@ tdplay.site/sitemap.xml ──► build_index.py ──► index.json + links.js
 | `embed.html` | The 2-line snippet to paste into a Hostinger **Embed code** element. |
 | `jump.html` | Optional site-wide snippet: centres + highlights the exact video a result points to. |
 | `.github/workflows/build-index.yml` | The schedule. |
+| `wix_import.py` + `wix_rects.json` + `wix_tracks.json` | One-off importer for the 2020–2023 Wix sites → `wix.json`. |
 | `index.json` / `links.json` / `data.json` / `status.json` | Generated – don't edit by hand. |
 
 ## Set-up on GitHub (one time, all in the browser)
@@ -71,6 +72,23 @@ Both can coexist. Searches are shareable: `…/tdplay-search/?q=red%20velvet`.
 site changes. To make it pixel-exact – the page scrolls the video to the centre and flashes
 a red frame around it – paste [`jump.html`](jump.html) once, site-wide:
 **Website settings → Integrations → Custom code → Body** (end of body) → save → publish.
+
+## The 2020–2023 Wix archive
+
+The old sites (`mrxsp08.wixsite.com/tdplay23`, `/tdplay22`, `/tdplay21` and the
+2020 pages under `/tdplay22`) are in the search too, from `wix.json`, which
+`build_index.py` merges on every run. They are archives, so `wix.json` is built once:
+
+- `wix_import.py` follows the links from the four year hubs, reads each page's
+  component JSON (video URLs, captions, initials, icon links) and pairs them up using
+  element positions from `wix_rects.json` – captured once in a browser because Wix lays
+  pages out at runtime (see the script header for the snippet).
+- The 2020 pages (and a few from early 2021) used a third-party POWR video widget that
+  no longer loads, so those slots have no playable video. Their song is recovered from the
+  slot's Spotify link (artist, title, artwork → `wix_tracks.json`) so they still show up in
+  search, with the album art as the thumbnail and the Apple Music / Spotify links intact.
+- Re-run `python3 wix_import.py` only if the Wix sites change (Wix rate-limits: expect a
+  few "429" retries; it resumes from the caches).
 
 ## Day to day
 

@@ -445,6 +445,7 @@ DATA = os.path.join(HERE, "data.json")      # full crawl (source of truth + ETag
 INDEX = os.path.join(HERE, "index.json")    # lean: what the search widget downloads
 LINKS = os.path.join(HERE, "links.json")    # per-video links, loaded lazily by the widget
 STATUS = os.path.join(HERE, "status.json")  # last-checked date (keeps the GitHub schedule alive)
+WIX = os.path.join(HERE, "wix.json")        # the old Wix sites (2020–2023), produced by wix_import.py
 
 
 def write_json(path, obj):
@@ -493,6 +494,11 @@ def main():
     for e in results:
         e["month"] = month_label(e)
         e["page"] = int(m.group(1)) if (m := re.search(r"-pg(\d+)$", e["slug"])) else 0
+    if os.path.exists(WIX):                       # archive sites: crawled once, merged every run
+        with open(WIX, encoding="utf-8") as f:
+            wix_pages = json.load(f).get("pages", [])
+        results.extend(wix_pages)
+        print(f"wix archive: {len(wix_pages)} pages merged")
     results.sort(key=sort_key)
 
     titles = prev_doc.get("videoTitles") or {}
@@ -521,12 +527,19 @@ def main():
                 li["featured"] = 1
             if it.get("alt"):
                 li["alt"] = it["alt"]
+            if it.get("thumb"):
+                # no video on the page (dead widget): album art instead. Spotify art is
+                # stored as its bare hash; the widget prefixes https://i.scdn.co/image/
+                m = re.search(r"spotifycdn\.com/image/([0-9a-f]{40})$", it["thumb"])
+                li["thumb"] = ("sp:" + m.group(1)) if m else it["thumb"]
             lean_items.append(li)
             l = {k: it[k] for k in ("site", "apple", "spotify", "youtube") if it.get(k)}
             if l:
-                links[p["slug"] + "/" + it["yt"]] = l
+                links[p["slug"] + "/" + (it["yt"] or it.get("anchor", ""))] = l
         lean = {"slug": p["slug"], "name": p["name"], "month": p["month"], "page": p["page"],
                 "items": lean_items}
+        if p.get("source") == "wix":
+            lean["url"] = p["url"]                  # lives on another domain
         if p.get("playlists"):
             lean["playlists"] = p["playlists"]
         lean_pages.append(lean)

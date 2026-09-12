@@ -16,6 +16,7 @@
               script.src.replace(/[^\/]*$/, ""))) || "./";
   var SITE = "https://tdplay.site";
   var THUMB = function (id) { return "https://i.ytimg.com/vi/" + id + "/mqdefault.jpg"; };
+  var ART = function (t) { return t.indexOf("sp:") === 0 ? "https://i.scdn.co/image/" + t.slice(3) : t; };   // album art for video-less slots
   var MAX_RESULTS = 80;
 
   // ------------------------------------------------------------ styles
@@ -163,7 +164,7 @@ overflow:hidden;text-decoration:none;color:inherit;transition:border-color .15s,
         (p.page ? " pg" + p.page + " pg " + p.page + " page " + p.page + " p" + p.page : "");
       pageDocs.push({ page: p, text: pageText, n: norm(p.name) });
       p.items.forEach(function (it, i) {
-        if (!it.yt) return;
+        if (!it.yt && !it.thumb) return;
         var artist = splitArtist(it.caption || "");
         docs.push({
           page: p, it: it, i: i, ord: docs.length,
@@ -250,8 +251,8 @@ overflow:hidden;text-decoration:none;color:inherit;transition:border-color .15s,
   // Result links land on the row (<section id>) natively in every browser; ?v=<YouTube id>
   // lets the optional site-wide jump script (jump.html) centre and highlight the exact card.
   function pageUrl(p, it) {
-    var u = SITE + "/" + (p.slug === "home" ? "" : p.slug);
-    if (it && it.yt) u += "?v=" + it.yt;
+    var u = p.url || (SITE + "/" + (p.slug === "home" ? "" : p.slug));   // p.url = archive pages on other hosts
+    if (it && it.yt && !p.url) u += "?v=" + it.yt;                        // ?v= only matters for the jump script on tdplay.site
     if (it && it.anchor) u += "#" + it.anchor;
     return u;
   }
@@ -309,20 +310,20 @@ overflow:hidden;text-decoration:none;color:inherit;transition:border-color .15s,
     }
     r.items.slice(0, state.shown).forEach(function (row) {
       var p = row.d.page, it = row.d.it;
-      var l = (links && links[p.slug + "/" + it.yt]) || {};
+      var l = (links && links[p.slug + "/" + (it.yt || it.anchor || "")]) || {};
       var linkEls = [];
       function ext(kind, href, title) {
         var a = h("a", { href: href, target: "_blank", rel: "noopener", title: title, html: ICONS[kind] });
         a.addEventListener("click", function (e) { e.stopPropagation(); });
         linkEls.push(a);
       }
-      ext("youtube", "https://www.youtube.com/watch?v=" + it.yt, "Watch on YouTube");
+      if (it.yt) ext("youtube", "https://www.youtube.com/watch?v=" + it.yt, "Watch on YouTube");
       if (l.apple) ext("apple", l.apple, "Apple Music");
       if (l.spotify) ext("spotify", l.spotify, "Spotify");
       if (l.youtube) ext("youtube", l.youtube, "Artist on YouTube");
       if (l.site) ext("site", l.site, "Artist website");
       var a = h("a", { "class": "tds-item", href: pageUrl(p, it), target: openTarget, role: "option", title: "Open " + p.name }, [
-        h("span", { "class": "tds-thumb", style: "background-image:url(" + THUMB(it.yt) + ")" }),
+        h("span", { "class": "tds-thumb", style: "background-image:url(" + (it.yt ? THUMB(it.yt) : ART(it.thumb)) + ")" }),
         h("span", { "class": "tds-body" }, [
           h("span", { "class": "tds-cap", html: highlight(it.caption || "(untitled)", toks) }),
           h("span", { "class": "tds-meta" }, [
