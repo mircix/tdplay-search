@@ -27,7 +27,8 @@ font:15px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial
 max-width:900px;margin:0 auto;box-sizing:border-box}\
 .tds *{box-sizing:border-box}\
 .tds-box{position:relative;display:flex;align-items:center;gap:10px;border-radius:16px;padding:6px 10px 6px 16px;transition:box-shadow .2s,border-color .2s}\
-.tds-box:focus-within{border-color:rgba(255,43,43,.8);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 10px 28px rgba(0,0,0,.38),0 0 0 4px rgba(255,43,43,.18)}\
+.tds-box:focus-within{border-color:rgba(255,90,90,.85);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 0 14px rgba(255,43,43,.18),\
+0 0 6px 1px rgba(255,43,43,.55),0 0 22px 6px rgba(255,43,43,.32),0 0 48px 14px rgba(255,43,43,.14),0 10px 28px rgba(0,0,0,.38)}\
 .tds-box svg{flex:none;width:22px;height:22px;fill:none;stroke:var(--tds-muted);stroke-width:2.2;stroke-linecap:round}\
 .tds-input{flex:1;min-width:0;background:transparent;border:0;outline:0;color:var(--tds-text);font:inherit;font-size:19px;padding:10px 0}\
 .tds-input::placeholder{color:var(--tds-muted)}\
