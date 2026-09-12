@@ -94,11 +94,26 @@ overflow:hidden;text-decoration:none;color:inherit;transition:border-color .15s,
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
     });
   }
-  // Fold accents/case/punctuation so "renee rapp" finds "Reneé Rapp".
+  // Letters that accent-stripping can't fold: "LØLØ" -> "lolo", "MØ" -> "mo", "nævis" -> "naevis".
+  var TRANSLIT = { "ø": "o", "ł": "l", "đ": "d", "ð": "d", "þ": "th", "æ": "ae", "œ": "oe", "ß": "ss", "ı": "i", "ħ": "h", "ŧ": "t" };
+  function stripMarks(s) {
+    try { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); } catch (e) { return s; }
+  }
+  function foldChar(c) {
+    c = stripMarks(c.toLowerCase());
+    return TRANSLIT[c] || c;
+  }
+  // Fold accents/case/punctuation so "renee rapp" finds "Reneé Rapp" and "lolo" finds "LØLØ".
   function norm(s) {
-    s = String(s || "").toLowerCase();
-    try { s = s.normalize("NFD").replace(/[̀-ͯ]/g, ""); } catch (e) { }
-    return s.replace(/[‘’ʼ]/g, "'").replace(/[^\p{L}\p{N}'&+#]+/gu, " ").replace(/\s+/g, " ").trim();
+    s = stripMarks(String(s || "").toLowerCase());
+    s = s.replace(/[øłđðþæœßıħŧ]/g, function (c) { return TRANSLIT[c] || c; });
+    return s.replace(/[\u2018\u2019\u02bc]/g, "'").replace(/[^\p{L}\p{N}'&+#]+/gu, " ").replace(/\s+/g, " ").trim();
+  }
+  // Same folding, one output character per input character, so match positions map back onto the original text.
+  function foldKeepLength(text) {
+    var out = "";
+    for (var i = 0; i < text.length; i++) { var f = foldChar(text[i]); out += f ? f[0] : text[i].toLowerCase(); }
+    return out;
   }
   function tokens(q) { return norm(q).split(" ").filter(Boolean); }
   function monthAliases(monthLabel) {
@@ -119,7 +134,7 @@ overflow:hidden;text-decoration:none;color:inherit;transition:border-color .15s,
   function highlight(text, toks) {
     // Highlight token matches on the folded string, mapped back onto the original.
     if (!toks.length) return esc(text);
-    var lower = String(text).toLowerCase();
+    var lower = foldKeepLength(String(text));
     var ranges = [];
     toks.forEach(function (t) {
       var raw = t, from = 0, idx;

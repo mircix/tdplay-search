@@ -116,7 +116,7 @@ a `file://` URL – browsers block `fetch()` of local files.
 
 ## Search tips (for visitors)
 
-- artist or song: `red velvet`, `french kiss`, `renee rapp` (accents don't matter)
+- artist or song: `red velvet`, `french kiss`, `renee rapp`, `lolo` (accents and letters like Ø/ł/æ don't matter)
 - initials as shown on the page: `kol`, `xcx`, `rv`
 - a month: `aug 26`, `august'26`, `xmas`, `2024` – lists the pages, then every video on them
 - Korean / Japanese / Chinese titles work as typed
