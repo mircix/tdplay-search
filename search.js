@@ -60,7 +60,7 @@ overflow:hidden;text-decoration:none;color:inherit;transition:border-color .15s,
 .tds-links{display:flex;gap:6px;margin-left:auto}\
 .tds-links a{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:10px;color:var(--tds-muted);text-decoration:none}\
 .tds-links a:hover{background:#1c1c26;filter:brightness(1.25)}\
-.tds-links .tds-l-youtube{color:#ff0000}.tds-links .tds-l-apple{color:#fa243c}.tds-links .tds-l-spotify{color:#1db954}.tds-links .tds-l-site{color:#40e0d0}\
+.tds-links .tds-l-youtube{color:#ff0000}.tds-links .tds-l-apple{color:#ff5cf0}.tds-links .tds-l-spotify{color:#1db954}.tds-links .tds-l-site{color:#40e0d0}\
 .tds-links svg{width:32px;height:32px;fill:currentColor}\
 .tds mark{background:var(--tds-mark);color:inherit;border-radius:3px;padding:0 1px}\
 .tds-empty{padding:28px 12px;text-align:center;color:var(--tds-muted)}\
