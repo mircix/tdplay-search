@@ -302,6 +302,9 @@ def block_items(block, elements, block_id):
         if i is None:
             continue
         vb = videos[i][0]
+        if single and not (vb["left"] <= b["cx"] <= vb["left"] + vb["w"]
+                           and vb["top"] - 20 <= b["top"] <= vb["bottom"] + 80):
+            continue        # featured section: ignore the small icons in its far corners
         if single or b["top"] < vb["top"] + vb["h"] * 0.5:
             cur = items[i][kind]
             # several Apple links on a featured section: keep the album over the music-video
