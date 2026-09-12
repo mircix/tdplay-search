@@ -378,8 +378,10 @@ overflow:hidden;text-decoration:none;color:inherit;transition:border-color .15s,
   if (!initial) { try { initial = new URLSearchParams(window.top.location.search).get("q") || ""; } catch (e) { } }
   if (initial) { input.value = initial; onInput(); }
   else if (script && script.getAttribute("data-preload") !== "false") {
-    // Warm the index in the background on the standalone page; the embed waits for focus.
-    if (!(window.top !== window.self)) setTimeout(function () { loadIndex().then(render).catch(function () { }); }, 300);
+    // Warm the index in the background on the standalone page (or when the embed says
+    // data-preload="true", e.g. a dedicated search page); other embeds wait for focus.
+    var pre = script.getAttribute("data-preload");
+    if (pre === "true" || !(window.top !== window.self)) setTimeout(function () { loadIndex().then(render).catch(function () { }); }, 300);
   }
   render();
 })();
