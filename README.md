@@ -15,7 +15,9 @@ tdplay.site/sitemap.xml ──► build_index.py ──► index.json + links.js
 1. **`build_index.py`** reads the sitemap, so any page you publish is discovered
    automatically. It decodes the builder data Hostinger embeds in each page and pulls out,
    for every video slot: the YouTube ID, caption, artist initials, the initials' website
-   link, and the Apple Music / Spotify / YouTube icon links. It sends each page's `ETag`
+   link, and the Apple Music / Spotify / YouTube icon links. The big **featured** video on
+   each page has no caption on the site, so its title and channel are fetched from
+   YouTube's keyless oEmbed endpoint (cached in `data.json`; only new videos are looked up). It sends each page's `ETag`
    back, so unchanged pages answer `304` and aren't downloaded again (a no-change run
    takes ~4 s; a full crawl of all 157 pages ~12 s).
 2. **GitHub Actions** runs that script every 6 hours (and on demand) and commits the

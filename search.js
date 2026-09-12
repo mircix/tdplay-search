@@ -55,6 +55,7 @@ overflow:hidden;text-decoration:none;color:inherit;transition:border-color .15s,
 .tds-ini{font-family:Oswald,'Arial Narrow',Impact,sans-serif;font-size:15px;letter-spacing:.06em;color:var(--tds-pink);text-shadow:0 0 8px rgba(255,92,240,.6)}\
 .tds-chip{background:#1c1c26;border:1px solid var(--tds-line);border-radius:999px;padding:2px 9px;white-space:nowrap}\
 .tds-chip em{font-style:normal;color:var(--tds-red)}\
+.tds-feat{color:#ffd166;border-color:rgba(255,209,102,.4)}\
 .tds-links{display:flex;gap:4px;margin-left:auto}\
 .tds-links a{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;color:var(--tds-muted);text-decoration:none}\
 .tds-links a:hover{background:#1c1c26;color:var(--tds-text)}\
@@ -167,6 +168,7 @@ overflow:hidden;text-decoration:none;color:inherit;transition:border-color .15s,
         docs.push({
           page: p, it: it, i: i, ord: docs.length,
           cap: norm(it.caption), ini: norm(it.initials), art: norm(artist),
+          alt: norm(it.alt || ""),          // featured videos: channel name, artwork filename, section anchor
           text: pageText
         });
       });
@@ -191,6 +193,7 @@ overflow:hidden;text-decoration:none;color:inherit;transition:border-color .15s,
         if (d.art && has(d.art, t)) hit += 15;                    // in the artist part of "Artist - Title"
         if (d.cap.indexOf(t) === 0 || d.cap.indexOf(" " + t) !== -1) hit += 6;   // word start
       }
+      else if (d.alt && has(d.alt, t)) hit = 16;                   // featured-video hints
       else if (has(d.text, t)) hit = 4;                            // matches the page/month only
       if (!hit) return 0;
       s += hit;
@@ -198,6 +201,7 @@ overflow:hidden;text-decoration:none;color:inherit;transition:border-color .15s,
     if (qn.length > 2 && d.cap.indexOf(qn) !== -1) s += 25;       // whole phrase present
     if (qn.length > 2 && d.cap.indexOf(qn) === 0) s += 30;        // caption starts with the query
     if (qn && d.art === qn) s += 40;                              // exact artist
+    if (d.it.featured) s += 3;                                    // the page's headline video edges ahead on ties
     if (d.ini && d.ini === qn) s += 40;
     return s;
   }
@@ -324,6 +328,7 @@ overflow:hidden;text-decoration:none;color:inherit;transition:border-color .15s,
           h("span", { "class": "tds-meta" }, [
             it.initials ? h("span", { "class": "tds-ini", html: highlight(it.initials, toks) }) : null,
             h("span", { "class": "tds-chip", html: "<em>" + esc(p.month) + "</em>" + (p.page ? " · PG." + p.page : "") }),
+            it.featured ? h("span", { "class": "tds-chip tds-feat", text: "★ Featured" }) : null,
             h("span", { "class": "tds-links" }, linkEls)
           ])
         ])

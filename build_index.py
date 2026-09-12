@@ -171,7 +171,14 @@ def yt_id(s):
     return m.group(1) if m else ""
 
 
-def icon_kind(path):
+def icon_kind(path, href=""):
+    h = (href or "").lower()
+    if "music.apple.com" in h:
+        return "apple"
+    if "open.spotify.com" in h:
+        return "spotify"
+    if "youtube.com" in h or "youtu.be" in h:
+        return "youtube"
     p = (path or "").lower()
     if "apple" in p:
         return "apple"
@@ -180,6 +187,25 @@ def icon_kind(path):
     if "youtube" in p and "back-plate" not in p:
         return "youtube"
     return ""
+
+
+DECOR_RE = re.compile(r"apple|spotify|youtube|website|instagram|page-up|screen-fade|back-plate|title-bar|logo|glow", re.I)
+MONTH_SUFFIX_RE = re.compile(r"-(?:january|february|march|april|may|june|july|august|september|october|november|december|"
+                             r"jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec|xmas)\d{2}$", re.I)
+
+
+def words_from_slug(slug):
+    """'tally-spear-august26' -> 'Tally Spear';  'no-na-august26' -> 'No Na'."""
+    base = MONTH_SUFFIX_RE.sub("", slug or "")
+    return " ".join(w.capitalize() for w in base.split("-") if w)
+
+
+def words_from_artwork(path):
+    """'tally-spear---typical-me-srFXz2sTPzFGwkD.png' -> 'Tally Spear - Typical Me'."""
+    base = re.sub(r"\.[a-z0-9]+$", "", path or "", flags=re.I)
+    base = re.sub(r"-[A-Za-z0-9]{10,}$", "", base)          # Hostinger's random upload id
+    parts = [" ".join(w.capitalize() for w in seg.split("-") if w) for seg in base.split("---")]
+    return " - ".join(p for p in parts if p)
 
 
 def box(el):
@@ -206,7 +232,7 @@ def split_artist(caption):
 def block_items(block, elements, block_id):
     comps = [elements.get(cid) for cid in block.get("components", [])]
     comps = [c for c in comps if c]
-    videos, texts, icons = [], [], []
+    videos, texts, icons, artwork = [], [], [], []
     for el in comps:
         b = box(el)
         if not b:
@@ -222,12 +248,15 @@ def block_items(block, elements, block_id):
             if txt:
                 texts.append((b, txt, first_href(el.get("content"))))
         elif t == "GridImage":
-            kind = icon_kind(st.get("path"))
+            kind = icon_kind(st.get("path"), el.get("href"))
             if kind and el.get("href"):
                 icons.append((b, kind, el["href"]))
+            if st.get("path") and not DECOR_RE.search(st["path"]):
+                artwork.append(st["path"])            # album art carries "artist---title" in its filename
     if not videos:
         return []
     videos.sort(key=lambda v: v[0]["left"])
+    single = len(videos) == 1                          # the big featured embed: one video per section
 
     def column_of(b):
         """Index of the video whose column this element sits in, or None."""
@@ -245,6 +274,12 @@ def block_items(block, elements, block_id):
         if i is None:
             continue
         vb = videos[i][0]
+        if single:
+            # Featured layout: the initials float over the video; there is no caption.
+            if len(txt) <= 8 and (not items[i]["initials"] or len(txt) < len(items[i]["initials"])):
+                items[i]["initials"] = txt
+                items[i]["site"] = href
+            continue
         if b["top"] >= vb["top"] + vb["h"] * 0.5:
             # below the video => caption (nearest one wins)
             if not items[i]["caption"] or b["top"] < items[i].get("_cap_top", 1e9):
@@ -261,7 +296,13 @@ def block_items(block, elements, block_id):
         if i is None:
             continue
         vb = videos[i][0]
-        if b["top"] < vb["top"] + vb["h"] * 0.5:
+        if single or b["top"] < vb["top"] + vb["h"] * 0.5:
+            cur = items[i][kind]
+            # several Apple links on a featured section: keep the album over the music-video
+            if kind == "apple" and cur and "/album/" in cur and "/album/" not in href:
+                continue
+            if kind == "youtube" and yt_id(href) == items[i]["yt"]:
+                continue                                # icon just links to the embedded video itself
             items[i][kind] = href
     anchor = block.get("htmlId") or block_id   # <section id="…"> on the published page
     out = []
@@ -272,6 +313,17 @@ def block_items(block, elements, block_id):
         it["artist"] = artist
         it["title"] = title
         it["anchor"] = anchor
+        if single:
+            it["featured"] = True
+            hints = [words_from_artwork(a) for a in artwork]
+            if block.get("htmlId"):
+                hints.append(words_from_slug(block["htmlId"]))
+            seen, uniq = set(), []
+            for h in hints:
+                if h and h.lower() not in seen:
+                    seen.add(h.lower())
+                    uniq.append(h)
+            it["alt"] = " | ".join(uniq)
         out.append(it)
     return out
 
@@ -315,6 +367,50 @@ def parse_page(url, html_text, etag, lastmod):
             entry["items"].extend(block_items(b, elements, bid))
     entry["playlists"] = playlist_links(blocks, elements, cur)
     return entry
+
+
+# ------------------------------------------------------------ YouTube titles
+
+OEMBED = "https://www.youtube.com/oembed?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3D{}&format=json"
+
+
+def fetch_title(vid):
+    """Title + channel from YouTube's keyless oEmbed endpoint ('' if unavailable)."""
+    try:
+        status, body, _ = fetch(OEMBED.format(vid), retries=2)
+        d = json.loads(body)
+        return {"t": d.get("title", ""), "a": d.get("author_name", "")}
+    except Exception:
+        return {"t": "", "a": ""}
+
+
+def fill_titles(pages, cache, today):
+    """Give every captionless video (the big featured embeds) its real YouTube title."""
+    need = []
+    for p in pages:
+        for it in p["items"]:
+            if it["caption"] or not it["yt"]:
+                continue
+            c = cache.get(it["yt"])
+            if c and (c.get("t") or c.get("c", "") > today[:7]):   # retry failures monthly
+                continue
+            need.append(it["yt"])
+    need = sorted(set(need))
+    if need:
+        with ThreadPoolExecutor(max_workers=4) as ex:
+            for vid, info in zip(need, ex.map(fetch_title, need)):
+                cache[vid] = dict(info, c=today)
+    for p in pages:
+        for it in p["items"]:
+            if it["caption"] or not it["yt"]:
+                continue
+            c = cache.get(it["yt"]) or {}
+            if c.get("t"):
+                it["caption"] = c["t"]
+                it["artist"], it["title"] = split_artist(c["t"])
+                if c.get("a") and c["a"].lower() not in it.get("alt", "").lower():
+                    it["alt"] = (c["a"] + " | " + it.get("alt", "")).strip(" |")
+    return len(need)
 
 
 # ---------------------------------------------------------------- ordering
@@ -391,6 +487,11 @@ def main():
         e["page"] = int(m.group(1)) if (m := re.search(r"-pg(\d+)$", e["slug"])) else 0
     results.sort(key=sort_key)
 
+    titles = prev_doc.get("videoTitles") or {}
+    looked_up = fill_titles(results, titles, datetime.now(timezone.utc).strftime("%Y-%m-%d"))
+    if looked_up:
+        print(f"youtube titles looked up: {looked_up}")
+
     now = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     # Keep the old "generated" stamp when nothing on the site changed, so an
     # unchanged crawl produces byte-identical files and no commit.
@@ -399,7 +500,7 @@ def main():
     total_items = sum(len(p["items"]) for p in results)
     meta = {"generated": generated, "site": SITE, "pageCount": len(results), "itemCount": total_items}
 
-    kb_data = write_json(DATA, dict(meta, pages=results))
+    kb_data = write_json(DATA, dict(meta, videoTitles=titles, pages=results))
 
     lean_pages, links = [], {}
     for p in results:
@@ -408,6 +509,10 @@ def main():
             li = {"yt": it["yt"], "caption": it["caption"], "initials": it["initials"]}
             if it.get("anchor"):
                 li["anchor"] = it["anchor"]
+            if it.get("featured"):
+                li["featured"] = 1
+            if it.get("alt"):
+                li["alt"] = it["alt"]
             lean_items.append(li)
             l = {k: it[k] for k in ("site", "apple", "spotify", "youtube") if it.get(k)}
             if l:
