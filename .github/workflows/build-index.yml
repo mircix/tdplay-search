@@ -26,7 +26,9 @@ jobs:
           python-version: "3.12"
 
       - name: Crawl tdplay.site and rebuild the index
-        run: python3 build_index.py
+        # A push that changed the indexer re-parses everything; scheduled runs are incremental.
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then python3 build_index.py --full; else python3 build_index.py; fi
 
       - name: Commit updated index (only if something changed)
         run: |

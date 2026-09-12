@@ -11,6 +11,7 @@ the builder data that Hostinger embeds in each page, and writes:
   status.json when the site was last checked
 
 Stdlib only – no pip installs needed. Run:  python3 build_index.py
+Add --full to ignore ETags and re-parse every page (needed after changing the extractor).
 """
 import html
 import json
@@ -262,7 +263,7 @@ def block_items(block, elements, block_id):
         vb = videos[i][0]
         if b["top"] < vb["top"] + vb["h"] * 0.5:
             items[i][kind] = href
-    anchor = block.get("htmlId") or ""
+    anchor = block.get("htmlId") or block_id   # <section id="…"> on the published page
     out = []
     for it in items:
         it.pop("_cap_top", None)
@@ -270,8 +271,7 @@ def block_items(block, elements, block_id):
         artist, title = split_artist(it["caption"])
         it["artist"] = artist
         it["title"] = title
-        if anchor:
-            it["anchor"] = anchor
+        it["anchor"] = anchor
         out.append(it)
     return out
 
@@ -360,6 +360,8 @@ def main():
             previous = {p["slug"]: p for p in prev_doc.get("pages", [])}
         except (ValueError, KeyError):
             previous, prev_doc = {}, {}
+    if "--full" in sys.argv:
+        previous = {}   # no conditional requests: every page is downloaded and re-parsed
 
     urls = sitemap_urls()
     print(f"sitemap: {len(urls)} urls")

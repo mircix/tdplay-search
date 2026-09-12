@@ -32,6 +32,7 @@ tdplay.site/sitemap.xml ──► build_index.py ──► index.json + links.js
 | `search.js` | The search widget (all CSS + JS, no dependencies). |
 | `index.html` | Standalone search page – becomes `https://mircix.github.io/tdplay-search/`. |
 | `embed.html` | The 2-line snippet to paste into a Hostinger **Embed code** element. |
+| `jump.html` | Optional site-wide snippet: centres + highlights the exact video a result points to. |
 | `.github/workflows/build-index.yml` | The schedule. |
 | `index.json` / `links.json` / `data.json` / `status.json` | Generated – don't edit by hand. |
 
@@ -63,6 +64,12 @@ and make the element tall enough for results
 
 Both can coexist. Searches are shareable: `…/tdplay-search/?q=red%20velvet`.
 
+**Jumping to the exact video.** Every result links to the *row* the video sits in
+(`…/tdplay-august26-pg1?v=wP33kEY1iYU#zCMoGn`), which works in every browser with no
+site changes. To make it pixel-exact – the page scrolls the video to the centre and flashes
+a red frame around it – paste [`jump.html`](jump.html) once, site-wide:
+**Website settings → Integrations → Custom code → Body** (end of body) → save → publish.
+
 ## Day to day
 
 - **New pages** appear in search within 6 hours of publishing, automatically.
@@ -78,7 +85,8 @@ Both can coexist. Searches are shareable: `…/tdplay-search/?q=red%20velvet`.
 ## Run it locally
 
 ```bash
-python3 build_index.py
+python3 build_index.py          # incremental (only changed pages)
+python3 build_index.py --full   # re-parse everything (after changing the extractor)
 ```
 
 Then open `index.html` through any static server (e.g. `python3 -m http.server`), not as

@@ -243,7 +243,14 @@ overflow:hidden;text-decoration:none;color:inherit;transition:border-color .15s,
   var PAGES_COLLAPSED = 6;
   var openTarget = (window.top !== window.self) ? "_top" : "_self";  // works inline or inside an iframe embed
 
-  function pageUrl(p, it) { return SITE + "/" + (p.slug === "home" ? "" : p.slug) + (it && it.anchor ? "#" + it.anchor : ""); }
+  // Result links land on the row (<section id>) natively in every browser; ?v=<YouTube id>
+  // lets the optional site-wide jump script (jump.html) centre and highlight the exact card.
+  function pageUrl(p, it) {
+    var u = SITE + "/" + (p.slug === "home" ? "" : p.slug);
+    if (it && it.yt) u += "?v=" + it.yt;
+    if (it && it.anchor) u += "#" + it.anchor;
+    return u;
+  }
 
   function setStatus(html) { status.innerHTML = html; }
 
