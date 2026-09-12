@@ -30,7 +30,7 @@ tdplay.site/sitemap.xml ──► build_index.py ──► index.json + links.js
 |---|---|
 | `build_index.py` | The indexer. Python 3, standard library only. |
 | `search.js` | The search widget (all CSS + JS, no dependencies). |
-| `index.html` | Standalone search page – becomes `https://<you>.github.io/tdplay-search/`. |
+| `index.html` | Standalone search page – becomes `https://mircix.github.io/tdplay-search/`. |
 | `embed.html` | The 2-line snippet to paste into a Hostinger **Embed code** element. |
 | `.github/workflows/build-index.yml` | The schedule. |
 | `index.json` / `links.json` / `data.json` / `status.json` | Generated – don't edit by hand. |
@@ -43,11 +43,11 @@ tdplay.site/sitemap.xml ──► build_index.py ──► index.json + links.js
    including the `.github` folder) and commit.
    *Or, from a terminal in this folder:*
    ```bash
-   git init -b main && git add -A && git commit -m "TDPlay search" && git remote add origin https://github.com/<you>/tdplay-search.git && git push -u origin main
+   git init -b main && git add -A && git commit -m "TDPlay search" && git remote add origin https://github.com/mircix/tdplay-search.git && git push -u origin main
    ```
 3. **Settings → Pages → Build and deployment**: Source = *Deploy from a branch*,
    Branch = `main` / `/ (root)` → Save. After a minute the page is live at
-   `https://<you>.github.io/tdplay-search/`.
+   `https://mircix.github.io/tdplay-search/`.
 4. **Actions** tab → *Rebuild search index* → **Run workflow** once to confirm it runs
    green. From then on it runs itself every 6 hours.
 
@@ -55,11 +55,11 @@ tdplay.site/sitemap.xml ──► build_index.py ──► index.json + links.js
 
 **Option A – a search box on a page (recommended).** In the Hostinger builder add an
 **Embed code** element where you want the search, paste the contents of `embed.html`
-with `YOUR-GITHUB-USERNAME` replaced, and make the element tall enough for results
+and make the element tall enough for results
 (≈ 600 px+; results scroll inside it if the builder fixes the height). Publish.
 
 **Option B – a "Search" link in the navigation** pointing at
-`https://<you>.github.io/tdplay-search/`. Zero risk to the existing pages.
+`https://mircix.github.io/tdplay-search/`. Zero risk to the existing pages.
 
 Both can coexist. Searches are shareable: `…/tdplay-search/?q=red%20velvet`.
 
