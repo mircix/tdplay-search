@@ -28,6 +28,12 @@ from xml.etree import ElementTree
 
 SITE = "https://tdplay.site"
 SITEMAP = SITE + "/sitemap.xml"
+
+# Pages to leave out of the search (regular expressions matched against the slug,
+# e.g. "tdplay-january24-pg3"). Remove an entry to bring the pages back.
+EXCLUDE = [
+    r"^tdplay-january24-pg\d+$",   # January'24 – not finished yet
+]
 HERE = os.path.dirname(os.path.abspath(__file__))
 HEADERS = {
     # The CDN answers 403 to bare curl-style clients; look like a browser.
@@ -460,7 +466,9 @@ def main():
         previous = {}   # no conditional requests: every page is downloaded and re-parsed
 
     urls = sitemap_urls()
-    print(f"sitemap: {len(urls)} urls")
+    skipped = [u for u, _ in urls if any(re.search(x, u.replace(SITE, "").strip("/")) for x in EXCLUDE)]
+    urls = [(u, m) for u, m in urls if u not in skipped]
+    print(f"sitemap: {len(urls) + len(skipped)} urls, {len(skipped)} excluded")
 
     def work(item):
         url, lastmod = item
