@@ -67,26 +67,30 @@
                             inset 0 -4px 9px rgba(0,0,0,.9), inset 0 1px 2px rgba(255,255,255,.18); }
   .pill:hover span { color: #ff8fd0; text-shadow: 0 0 4px #ff4fb0, 0 0 12px #ff1f95, 0 0 22px rgba(255,31,149,.8), 0 1px 0 #6e0a3f; }
   .pill:active { transform: translateY(1px); }
-  /* TDPlay glyph, top-left, links home */
+  .topbar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin-bottom: 18px; }
+  .topbar .pill { grid-column: 2; margin: 0; }
+  /* TDPlay glyph, left-aligned with the title, links home */
   .logo {
-    position: absolute; top: 14px; left: 18px; z-index: 2; display: block;
+    grid-column: 1; justify-self: start; display: block;
     width: 64px; height: 64px; border-radius: 50%;
     box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 6px 18px rgba(0,0,0,.7);
     transition: transform .15s ease, box-shadow .2s ease;
   }
   .logo img { display: block; width: 100%; height: 100%; border-radius: 50%; }
   .logo:hover { transform: scale(1.06); box-shadow: 0 0 0 1px rgba(255,255,255,.14), 0 0 22px rgba(187,134,252,.45), 0 6px 18px rgba(0,0,0,.7); }
-  @media (max-width: 520px) { .logo { width: 48px; height: 48px; top: 12px; left: 12px; } }
+  @media (max-width: 520px) { .logo { width: 48px; height: 48px; } }
   footer { position: relative; z-index: 1; text-align: center; color: #6c6c78; font-size: 12.5px; padding: 0 18px 30px; }
   footer a { color: #9a9aa8; }
 </style>
 </head>
 <body>
-<a class="logo" href="https://tdplay.site/" aria-label="TDPlay home">
-  <img src="https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=375,fit=crop/Aq2og3RL87HrqVbx/tdplay-official-icon-AMq4g1ovxlh8Bzj3.png" alt="TDPlay" width="64" height="64">
-</a>
 <main>
-  <a class="pill" href="https://tdplay.site/" aria-label="Back to tdplay.site"><span>Back to Site</span></a>
+  <div class="topbar">
+    <a class="logo" href="https://tdplay.site/" aria-label="TDPlay home">
+      <img src="https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=375,fit=crop/Aq2og3RL87HrqVbx/tdplay-official-icon-AMq4g1ovxlh8Bzj3.png" alt="TDPlay" width="64" height="64">
+    </a>
+    <a class="pill" href="https://tdplay.site/" aria-label="Back to tdplay.site"><span>Back to Site</span></a>
+  </div>
   <header>
     <h1>TDPlay <em>Search</em></h1>
   </header>
