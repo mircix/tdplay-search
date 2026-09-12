@@ -70,7 +70,7 @@ MONTHS = ["january", "february", "march", "april", "may", "june", "july",
 
 # ---------------------------------------------------------------- fetching
 
-def fetch(url, etag=None, retries=3):
+def fetch(url, etag=None, retries=5):
     """GET a URL. Returns (status, body_text, headers). 304 => body is None."""
     req = urllib.request.Request(url, headers=dict(HEADERS))
     if etag:
@@ -91,9 +91,9 @@ def fetch(url, etag=None, retries=3):
                 time.sleep(2 * (attempt + 1))
                 continue
             raise
-        except (urllib.error.URLError, TimeoutError):
+        except (urllib.error.URLError, TimeoutError, OSError):
             if attempt < retries - 1:
-                time.sleep(2 * (attempt + 1))
+                time.sleep(5 * (attempt + 1))       # runner network blips can last a little while
                 continue
             raise
 
