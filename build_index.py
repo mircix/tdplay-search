@@ -98,8 +98,12 @@ def fetch(url, etag=None, retries=5):
             raise
 
 
-def sitemap_urls():
-    status, xml, _ = fetch(SITEMAP)
+def sitemap_urls(etag=None):
+    """(status, urls, etag). 304 (urls None) means nothing has been published since `etag`."""
+    status, xml, hdrs = fetch(SITEMAP, etag=etag)
+    new_etag = (hdrs.get("ETag") or hdrs.get("Etag") or "").strip()
+    if status == 304:
+        return 304, None, etag
     ns = {"s": "http://www.sitemaps.org/schemas/sitemap/0.9"}
     root = ElementTree.fromstring(xml)
     urls = []
@@ -108,7 +112,7 @@ def sitemap_urls():
         mod = u.findtext("s:lastmod", default="", namespaces=ns).strip()
         if loc:
             urls.append((loc, mod))
-    return urls
+    return status, urls, new_etag
 
 
 # ---------------------------------------------------------- Astro props
@@ -469,7 +473,34 @@ def main():
     if "--full" in sys.argv:
         previous = {}   # no conditional requests: every page is downloaded and re-parsed
 
-    urls = sitemap_urls()
+    prev_status = {}
+    if os.path.exists(STATUS):
+        try:
+            with open(STATUS, encoding="utf-8") as f:
+                prev_status = json.load(f)
+        except ValueError:
+            prev_status = {}
+
+    # Every URL in the sitemap carries the same lastmod – the site's last publish – and the
+    # sitemap itself has an ETag. So one conditional request answers "has anything been
+    # published?", and a quiet run can stop there instead of asking about all 160+ pages.
+    # A full sweep still runs at least daily, in case a publish ever leaves the sitemap alone.
+    sm_status, urls, sm_etag = sitemap_urls(etag=prev_status.get("sitemapEtag"))
+    hours_since_sweep = 99.0
+    if prev_status.get("lastFullSweep"):
+        try:
+            swept = datetime.fromisoformat(prev_status["lastFullSweep"].replace("Z", "+00:00"))
+            hours_since_sweep = (datetime.now(timezone.utc) - swept).total_seconds() / 3600
+        except ValueError:
+            pass
+    if sm_status == 304 and prev_doc and "--full" not in sys.argv and hours_since_sweep < 20:
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        write_json(STATUS, dict(prev_status, lastChecked=today, skipped="sitemap unchanged"))
+        print(f"sitemap unchanged since the last publish "
+              f"({hours_since_sweep:.1f}h since the last full sweep) – nothing to crawl")
+        return 0
+    if urls is None:                       # 304 but a sweep is due: ask for the sitemap in full
+        sm_status, urls, sm_etag = sitemap_urls()
     skipped = [u for u, _ in urls if any(re.search(x, u.replace(SITE, "").strip("/")) for x in EXCLUDE)]
     urls = [(u, m) for u, m in urls if u not in skipped]
     print(f"sitemap: {len(urls) + len(skipped)} urls, {len(skipped)} excluded")
@@ -553,7 +584,8 @@ def main():
     write_json(STATUS, {"lastChecked": now[:10], "generated": generated,
                         "pageCount": len(results), "itemCount": total_items,
                         "fetched": counts["fetched"], "unchanged": counts["unchanged"],
-                        "errors": counts["error"]})
+                        "errors": counts["error"],
+                        "sitemapEtag": sm_etag, "lastFullSweep": now})
 
     print(f"pages: {len(results)}  items: {total_items}  "
           f"(fetched {counts['fetched']}, unchanged {counts['unchanged']}, errors {counts['error']})")

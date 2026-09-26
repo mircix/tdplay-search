@@ -96,6 +96,11 @@ The old sites (`mrxsp08.wixsite.com/tdplay23`, `/tdplay22`, `/tdplay21` and the
   Want it sooner? Actions → *Rebuild search index* → **Run workflow**.
 - **Change the schedule:** edit the `cron:` line in `.github/workflows/build-index.yml`
   (`"17 */6 * * *"` = every 6 h; `"17 * * * *"` = hourly).
+- **The crawl is cheap by design.** Every URL in the sitemap shares one `lastmod` (the site's
+  last publish) and the sitemap has an ETag, so each run first asks a single conditional
+  question: *has anything been published?* If not, the run stops there — 1 request instead of
+  160+. A publish, a new page, or 20 hours since the last full sweep triggers the normal
+  per-page (ETag-conditional) crawl, so nothing can be missed for longer than a day.
 - **Only published pages count** – edits sitting unpublished in the builder aren't visible
   to the crawler.
 - **Hide unfinished pages:** add a pattern to the `EXCLUDE` list at the top of
