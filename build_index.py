@@ -17,6 +17,7 @@ import html
 import json
 import os
 import re
+import socket
 import ssl
 import sys
 import time
@@ -64,20 +65,38 @@ def ssl_context():
 
 
 SSL_CTX = ssl_context()
+
+# GitHub-hosted runners have no IPv6, and tdplay.site publishes AAAA records. Each IPv6 attempt failed
+# instantly with "Network is unreachable", and Python reported that error instead of the real one: on
+# 2026-10-20 the run actually died because both IPv4 addresses stopped answering for ~10 minutes. So
+# connect over IPv4 only (falls back to whatever exists if a host ever has no IPv4).
+_getaddrinfo = socket.getaddrinfo
+
+
+def _ipv4_only(host, port, family=0, type=0, proto=0, flags=0):
+    res = _getaddrinfo(host, port, family, type, proto, flags)
+    v4 = [r for r in res if r[0] == socket.AF_INET]
+    return v4 or res
+
+
+socket.getaddrinfo = _ipv4_only
+
+TIMEOUT = 15                 # seconds per attempt and address (was 60)
+UNREACHABLE_GRACE_H = 24     # only fail the run once tdplay.site has been unreachable this long
 MONTHS = ["january", "february", "march", "april", "may", "june", "july",
           "august", "september", "october", "november", "december"]
 
 
 # ---------------------------------------------------------------- fetching
 
-def fetch(url, etag=None, retries=5):
+def fetch(url, etag=None, retries=3):
     """GET a URL. Returns (status, body_text, headers). 304 => body is None."""
     req = urllib.request.Request(url, headers=dict(HEADERS))
     if etag:
         req.add_header("If-None-Match", etag)
     for attempt in range(retries):
         try:
-            with urllib.request.urlopen(req, timeout=60, context=SSL_CTX) as r:
+            with urllib.request.urlopen(req, timeout=TIMEOUT, context=SSL_CTX) as r:
                 body = r.read()
                 enc = r.headers.get("Content-Encoding", "")
                 if "gzip" in enc:
@@ -96,6 +115,28 @@ def fetch(url, etag=None, retries=5):
                 time.sleep(5 * (attempt + 1))       # runner network blips can last a little while
                 continue
             raise
+
+
+def site_unreachable(prev_status, err):
+    """tdplay.site didn't answer this run (timeouts, refused, 403/5xx). One runner losing its way to
+    Hostinger is not an outage for visitors (2026-10-20: the user's Mac loaded the site fine
+    throughout), so note it and let the next scheduled run retry. Fail only if it has lasted
+    UNREACHABLE_GRACE_H hours, which would be worth an email."""
+    now = datetime.now(timezone.utc).replace(microsecond=0)
+    since_s = prev_status.get("unreachableSince") or now.isoformat().replace("+00:00", "Z")
+    try:
+        hours = (now - datetime.fromisoformat(since_s.replace("Z", "+00:00"))).total_seconds() / 3600
+    except ValueError:
+        since_s, hours = now.isoformat().replace("+00:00", "Z"), 0.0
+    write_json(STATUS, dict(prev_status, lastChecked=now.isoformat()[:10],
+                            unreachableSince=since_s, lastError=f"{type(err).__name__}: {err}"[:300],
+                            skipped="tdplay.site unreachable from the runner"))
+    if hours < UNREACHABLE_GRACE_H:
+        print(f"::warning::tdplay.site did not answer this runner ({type(err).__name__}: {err}). "
+              f"Unreachable for {hours:.1f}h so far – skipping; the next run retries.")
+        return 0
+    print(f"::error::tdplay.site has not answered GitHub for {hours:.0f}h ({type(err).__name__}: {err}).")
+    return 1
 
 
 def sitemap_urls(etag=None):
@@ -485,7 +526,12 @@ def main():
     # sitemap itself has an ETag. So one conditional request answers "has anything been
     # published?", and a quiet run can stop there instead of asking about all 160+ pages.
     # A full sweep still runs at least daily, in case a publish ever leaves the sitemap alone.
-    sm_status, urls, sm_etag = sitemap_urls(etag=prev_status.get("sitemapEtag"))
+    try:
+        sm_status, urls, sm_etag = sitemap_urls(etag=prev_status.get("sitemapEtag"))
+    except (urllib.error.URLError, TimeoutError, OSError) as e:   # HTTPError is a URLError too
+        return site_unreachable(prev_status, e)
+    prev_status.pop("unreachableSince", None)
+    prev_status.pop("lastError", None)
     hours_since_sweep = 99.0
     if prev_status.get("lastFullSweep"):
         try:
@@ -500,7 +546,10 @@ def main():
               f"({hours_since_sweep:.1f}h since the last full sweep) – nothing to crawl")
         return 0
     if urls is None:                       # 304 but a sweep is due: ask for the sitemap in full
-        sm_status, urls, sm_etag = sitemap_urls()
+        try:
+            sm_status, urls, sm_etag = sitemap_urls()
+        except (urllib.error.URLError, TimeoutError, OSError) as e:
+            return site_unreachable(prev_status, e)
     skipped = [u for u, _ in urls if any(re.search(x, u.replace(SITE, "").strip("/")) for x in EXCLUDE)]
     urls = [(u, m) for u, m in urls if u not in skipped]
     print(f"sitemap: {len(urls) + len(skipped)} urls, {len(skipped)} excluded")
